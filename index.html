@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+
+<head>
+<style>
+.container {
+	text-align: center;
+	margin-top: 50px;
+	font-family:Calibri;
+}
+#simonContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	height: 200px;
+}
+.button {
+	width: 100px;
+	height: 100px;
+	border-radius: 50%;
+	margin: 10px;
+	cursor: pointer;
+	box-shadow: 0 0 30px #333;
+}
+.button.active {
+	box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #fff, 0 0 60px #fff;
+}
+#green {
+	background-color: green;
+}
+#yellow {
+	background-color: yellow;
+}
+#blue {
+	background-color: blue;
+}
+#scoreboard.th{
+	text-align:center;
+	font-size:200px;
+	color:lawngreen;
+	
+}
+
+#scoreboard td{
+	text-align:center;
+	padding:15px;
+	border-bottom:1px solid #ddd;
+	color:black;
+	
+}
+
+#scoreboard{
+	text-align:center;
+	color:red;
+	
+}
+
+#timerValue{
+	font-family:"Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", "sans-serif";
+	font-size:xx-large;
+}
+
+@media only screen and (max-width: 800px) {
+td{
+	display:block;
+	width:auto;
+}
+
+#startgamebutton{
+
+  display : flex;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  margin: 0px auto 0px;}
+}
+
+
+</style>
+<meta content="text/html; charset=utf-8" http-equiv="content-type">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simon Says Game</title>
+<header>ניר סרור<span lang="en-us">, 313294993 ,</span> D-4</header>
+</head>
+
+<body style="background-image:url('clean-concrete-texture.jpg')">
+
+<div class="container">
+	<h1><span lang="he">סיימון אמר</span></h1>
+	<p>הוראות משחק</p>
+	<p>במשחק זה "סיימון" - המחשב , יציג עבורך רצף של צבעים. החל מצבע אחד. <br>עליך לחזור 
+על הרצף במדויק כפי שהוצג לך. <br>היעזרו בזיכרון שלכם כדי להצליח.
+	<br>בהצלחה!</p>
+
+	
+	<div>
+		<label for="name">הקלד את שמך:</label>
+		<input id="name" type="text" /> </div>
+	<div>
+		<label for="difficulty">רמת קושי:</label>
+		<select id="difficulty">
+		<option value="beginner">חובבן</option>
+		<option value="normal">בינוני</option>
+		<option value="expert">מומחה</option>
+		</select> 
+
+<div id="timer">
+	Timer: <span id="timerValue"></span></div>
+	</div>
+	<button id="startgamebutton" onclick="startGame()">Start Game</button>
+	<h3 id="message"></h3>
+	<div id="simonContainer">
+		<div id="green" class="button" onclick="handleButtonClick('green')">
+		</div>
+		<div id="yellow" class="button" onclick="handleButtonClick('yellow')">
+		</div>
+		<div id="blue" class="button" onclick="handleButtonClick('blue')">
+		</div>
+	</div>
+	<table id="scoreboard">
+	</table>
+</div>
+<script>
+    // Game variables
+    let sequence = [];
+    let playerSequence = [];
+    let level = 1;
+    let score = 0;
+    let isGameRunning = false;
+
+
+    // Colors
+    const colors = {
+      green: "#00FF00",
+      yellow: "#FFFF00",
+      blue: "#0000FF",
+    };
+
+ 
+    // Audio files for each color
+const audioFiles = {
+  green: 'green_sound.mp3',
+  yellow: 'yellow_sound.mp3',
+  blue: 'blue_sound.mp3',
+};
+
+// Function to play sound for a specific color
+function playSound(color) {
+  const audio = new Audio(audioFiles[color]);
+  audio.play();
+}
+	function $(el) { return document.getElementById(el); }
+
+
+    // Start the game
+    function startGame() {
+    
+      const name = $("name").value;
+      const difficulty = $("difficulty").value;
+      const simonContainer = $("simonContainer");
+      const message = $("message");
+      startTimer();
+      var nameInput = $("name");
+      if (name === "") {
+        message.innerText = "אנא הקלד את שמך";
+        nameInput.focus();
+        return;
+      }
+
+      isGameRunning = true;
+      sequence = [];
+      playerSequence = [];
+      level = 1;
+      score = 0;
+      simonContainer.style.pointerEvents = "none"; // Disable button clicks during game
+      message.innerText = `שלב ${level}`;
+
+      // Set interval based on difficulty
+      let interval = 1000;
+      if (difficulty === "normal") {
+        interval = 800;
+      } else if (difficulty === "expert") {
+        interval = 500;
+      }
+      seconds=0;
+      setTimeout(() => {playSequence();}, interval);
+    }
+
+    // Play the sequence
+    function playSequence() {
+      const simonContainer = $("simonContainer");
+      simonContainer.style.pointerEvents = "none"; // Disable button clicks during sequence
+
+      const buttonOrder = ["green", "yellow", "blue"];
+      const randomButton = buttonOrder[Math.floor(Math.random() * buttonOrder.length)];
+      sequence.push(randomButton);
+
+      let i = 0;
+      const sequenceInterval = setInterval(() => {
+        flashButton(sequence[i]);
+        playSound(sequence[i]);
+        i++;
+
+        if (i === sequence.length) {
+          clearInterval(sequenceInterval);
+          simonContainer.style.pointerEvents = "auto"; // Enable button clicks after sequence
+        }
+      }, 1000);
+    }
+
+    // Handle button clicks
+    function handleButtonClick(color) {
+      if (!isGameRunning) return;
+
+      flashButton(color);
+      playSound(color);
+      playerSequence.push(color);
+
+      const index = playerSequence.length - 1;
+      if (playerSequence[index] !== sequence[index]) {
+        endGame();
+        return;
+      }
+
+      if (playerSequence.length === sequence.length) {
+        score++;
+        playerSequence = [];
+        level++;
+        $("message").innerText = `שלב ${level}`;
+        setTimeout(() => {
+          playSequence();
+        }, 1000);
+      }
+    }
+
+    // Flash the button
+    function flashButton(color) {
+      const button = $(color);
+      button.classList.add('active');
+      setTimeout(function() {button.classList.remove('active')}, 100);
+    }
+
+    // End the game
+    function endGame() {
+      isGameRunning = false;
+      stopTimer();
+      $("message").innerText = `הפסדת ! בדוק את תוצאתך בלוח התוצאות מטה`;
+      const name = $("name").value;
+      const date = new Date().toLocaleString();   
+      const scoreboardData = loadScoreboardData() || []; // Load existing scoreboard data or create a new array
+      scoreboardData.push({ name, date, score, level}); // Include duration in the scoreboard data
+      saveScoreboardData(scoreboardData);
+      updateScoreboardTable(scoreboardData);
+    }
+    // Load scoreboard data from localStorage
+    function loadScoreboardData() {
+      const scoreboardDataString = localStorage.getItem("scoreboardData");
+      return JSON.parse(scoreboardDataString);
+    }
+
+    // Save scoreboard data to localStorage
+    function saveScoreboardData(scoreboardData) {
+      const scoreboardDataString = JSON.stringify(scoreboardData);
+      localStorage.setItem("scoreboardData", scoreboardDataString);
+    }
+
+    // Update the scoreboard table
+    function updateScoreboardTable(scoreboardData) {
+      const scoreboard = $("scoreboard");
+      scoreboard.innerHTML = `
+        <tr>
+          <th>שם</th>
+          <th>תאריך ושעה</th>
+          <th>שלב</th>
+          <th>רמת קושי</th>
+        </tr>
+      `;
+      for (const data of scoreboardData) {
+        const row = scoreboard.insertRow(-1);
+        const nameCell = row.insertCell(0);
+        const dateCell = row.insertCell(1);
+        const scoreCell = row.insertCell(2);
+        const levelCell = row.insertCell(3);
+        
+        nameCell.innerText = data.name;
+        dateCell.innerText = data.date;
+        scoreCell.innerText = data.score;
+        levelCell.innerText = getDifficultyName(data.level); // Convert level to difficulty name
+        
+  }
+}
+
+// Function to get the difficulty name based on the level number
+function getDifficultyName(level) {
+  switch (level) {
+    case 1:
+      return "Expert";
+    case 2:
+      return "Begginer";
+    case 3:
+      return "Normal";
+    default:
+      return "Begginer";
+  }
+} 
+
+let intervalId;
+let seconds = 0;
+
+    // Start the timer
+    function startTimer() {
+      intervalId = setInterval(() => {
+        seconds++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    // Stop the timer
+    function stopTimer() {
+      clearInterval(intervalId);
+    }
+
+    // Update the timer display
+    function updateTimerDisplay() {
+      const timerValue = document.getElementById('timerValue');
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      timerValue.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+
+window.addEventListener('beforeunload', function() {
+      localStorage.removeItem('scoreboardData');
+    });
+    
+   
+    
+    
+    
+ </script>
+
+</body>
+
+</html>
